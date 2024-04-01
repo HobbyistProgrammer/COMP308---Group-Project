@@ -1,5 +1,7 @@
 // APIGatewayMicroFrontend.js
 import React, { useEffect, useState } from 'react';
+import {jwtDecode} from 'jwt-decode';
+import { getToken, setToken, removeToken } from './TokenHelper';
 
 function APIGatewayMicroFrontend() {
 
@@ -43,9 +45,16 @@ function APIGatewayMicroFrontend() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = getToken();
     if (token) {
-      setIsLoggedIn(true);
+
+      const decodedToken = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      if(decodedToken.exp > currentTime){
+        setIsLoggedIn(true);
+      } else {
+        removeToken();
+      }
       setLoginEmail(localStorage.getItem('email'));
     }
   }, []);
@@ -55,7 +64,8 @@ function APIGatewayMicroFrontend() {
       const response = await fetch('http://localhost:3003/auth/logoff', {
         method: 'POST',
       });
-      localStorage.removeItem('authToken');
+      //localStorage.removeItem('authToken');
+      removeToken();
       const data = await response.text();
       setLoginStatus('Logged Off Successfully');
       setIsLoggedIn(false);
@@ -104,7 +114,8 @@ function APIGatewayMicroFrontend() {
         //console.log("checking post: ", response);
         const token = await response.text();
         //console.log("checking after login: ", token);
-        localStorage.setItem('authToken', token);
+        //localStorage.setItem('authToken', token);
+        setToken(token);
         localStorage.setItem('email', loginEmail);
         setLoginStatus('Login successful');
         setIsLoggedIn(true);
