@@ -13,20 +13,43 @@ app.use(function(req, res, next) {
 app.use(cors());
 //
 const serviceEndpoints = {
-  'Product Microservice': 'http://localhost:3002',
+  'Vitals Microservice': 'http://localhost:3002',
+  'Add Vitals Microservice' : 'http://localhost:3002',
+  'Edit Vitals Microservice': 'http://localhost:3002',
   'User Authentication Microservice': 'http://localhost:3003',
   'User Registration Microservice' : 'http://localhost:3003',
+  'User Logoff Microservice': 'http://localhost:3003',
 };
 //
-app.get('/products', async (req, res) => {
+app.get('/vitals', async (req, res) => {
   try {
-    const response = await axios.get(`${serviceEndpoints['Product Microservice']}/products`);
+    const response = await axios.get(`${serviceEndpoints['Vitals Microservice']}/vitals`);
     res.send(response.data);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching vitals:', error);
     res.status(500).send('Internal Server Error');
   }
 });
+app.post('/vitals/add', async (req, res) => {
+  try {
+    const response = await axios.post(`${serviceEndpoints['Add Vitals Microservice']}/vitals/add`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error adding vitals: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.put('/vitals/:id', async (req, res) => {
+  try{
+    const response = await axios.put(`${serviceEndPoints['Edit Vitals Microservice']}/vitals/:id`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error updating vitals: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 //
 app.post('/auth/login', async (req, res) => {
   try {
@@ -44,9 +67,19 @@ app.post('/auth/signup', async (req, res) => {
     res.send(response.data);
   } catch (error) {
     console.error('Error registering user: ', error);
-    res.status(500). send('Internal Server Error');
+    res.status(500).send('Internal Server Error');
   }
-})
+});
+
+app.post('/auth/logout', async (req, res) => {
+  try {
+    const response = await axios.post(`${serviceEndPoints['User Logoff Microservice']}/auth/logoff`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error Logging Off: ', error);
+    res.status.send('Internal Server Error');
+  }
+});
 
 app.listen(port, () => {
   console.log(`API Gateway listening on port ${port}`);

@@ -6,35 +6,58 @@ function APIGatewayMicroFrontend() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
   const [registrationStatus, setRegistrationStatus] = useState('');
 
-  const [products, setProducts] = useState(null);
+  const [vitals, setVitals] = useState('');
+  const [heartrate, setHeartRate] = useState('');
+  const [coretemp, setCoreTemp] = useState('');
+  const [bloodPressure, setBloodPressure] = useState('');
+  const [respiratoryRate, setRespiratoryRate] = useState('');
+
+  const [editVitalId, setEditVitalId] = useState('');
+  const [editHeartrate, setEditHeartrate] = useState('');
+  const [editCoretemp, setEditCoretemp] = useState('');
+  const [editBloodPressure, setEditBloodPressure] = useState('');
+  const [editRespiratoryRate, setEditRespiratoryRate] = useState('');
+
+  // Used to manipulate the loginstatus (Display login or others)
   const [loginStatus, setLoginStatus] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchVitals() {
       try {
-        const response = await fetch('http://localhost:3002/products');
+        const response = await fetch('http://localhost:3002/vitals');
         console.log('response', response);
         const data = await response.json();
-        setProducts(data);
+        setVitals(data);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching vitals:', error);
       }
     }
 
-    fetchProducts();
+    fetchVitals();
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      setIsLoggedIn(true);
+      setLoginEmail(localStorage.getItem('email'));
+    }
   }, []);
 
   async function handleLogout() {
     try{
-      const response = await fetch('http://localhost:3003/auth/logout', {
+      const response = await fetch('http://localhost:3003/auth/logoff', {
         method: 'POST',
       });
-
+      localStorage.removeItem('authToken');
       const data = await response.text();
-      setLoginStatus(data);
+      setLoginStatus('Logged Off Successfully');
       setIsLoggedIn(false);
     } catch (error) {
       console.error('Error logging out: ', error);
@@ -60,71 +83,287 @@ function APIGatewayMicroFrontend() {
     }
   }
 
-  async function handleLogin() {
+  // login test:
+  // Username: test
+  // email: test@test.ca
+  // password: 12345
+  async function handleLogin(e) {
+    e.preventDefault();
+    //console.log("checking response");
     try {
+      //console.log("checking response");
       const response = await fetch('http://localhost:3003/auth/login', {
         method: 'POST',
+        headers: {
+          'Content-Type' : 'application/json',
+        },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
-      console.log(response);
-      const data = await response.text();
-      setLoginStatus(data);
+      //console.log("checking response", response);
+      if(response.ok){
+        //console.log("checking post: ", response);
+        const token = await response.text();
+        //console.log("checking after login: ", token);
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('email', loginEmail);
+        setLoginStatus('Login successful');
+        setIsLoggedIn(true);
+      } else {
+        setLoginStatus('Invalid Credentials');
+      }
     } catch (error) {
       console.error('Error logging in:', error);
     }
   }
 
-  return (
-    <div>
-      <h2>Product Microservice</h2>
-      {products ? (
-        <ul>
-          {products.map((product) => (
-            <li key={product.id}>{product.name}</li>
-          ))}
-        </ul>
-      ) : (
-        <p>Loading products...</p>
-      )}
-      <h2>User Registration</h2>
+  async function handleCreateVitals() {
+    try{
+      //console.log("Creating vitals:", heartrate, coretemp, bloodPressure);
+      const response = await fetch('http://localhost:3002/vitals/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ heartrate, coretemp, bloodPressure, respiratoryRate}),
+      });
+      console.log("after fetch",response);
+      const data = await response.json();
+    } catch (error) {
+      console.error('Error adding vitals: ', error);
+    }
+  }
+
+  async function handleSaveVital(id) {
+    try {
+      const response = await fetch(`http://localhost:3002/vitals/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          heartrate: editHeartrate,
+          coretemp: editCoretemp,
+          bloodPressure: editBloodPressure,
+          respiratoryRate : editRespiratoryRate
+        }),
+      });
+
+      if(response.ok){
+        const updatedVitals = vitals.map(vital => {
+          if(vital._id === id) {
+            return {
+              ...vital,
+              heartrate: editHeartrate,
+              coretemp: editCoretemp,
+              bloodPressure: editBloodPressure,
+              respiratoryRate: editRespiratoryRate
+            };
+          }
+          return vital;
+        });
+        console.log("This is new edit: ",updatedVitals)
+        setVitals(updatedVitals);
+        handleCancelEdit();
+
+      } else {
+        throw new Error('Failed to update vital');
+      }
+    } catch (error) {
+      console.error('Error saving vital:', error);
+    }
+  }
+
+  async function handleEditVitals(id) {
+    setEditVitalId(id);
+    const vitalToEdit = vitals.find(vital => vital._id === id);
+    console.log(vitalToEdit);
+    if(vitalToEdit){
+      setEditHeartrate(vitalToEdit.heartrate);
+      setEditCoretemp(vitalToEdit.coretemp);
+      setEditBloodPressure(vitalToEdit.bloodpressure);
+      setEditRespiratoryRate(vitalToEdit.respiratoryrate);
+    }
+  }
+
+  function handleCancelEdit() {
+    setEditVitalId(null);
+    setEditHeartrate('');
+    setEditCoretemp('');
+    setEditBloodPressure('');
+    setEditRespiratoryRate('');
+  }
+
+  if(!isLoggedIn){
+    return (
       <div>
-        <form onSubmit={handleRegistration}>
-          <label>
-            Username:
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </label>
+        <h1>User Authentication Microservice</h1>
+        <h3>Please Login Below:</h3>
+        <form onSubmit={handleLogin}>
           <label>
             Email:
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
             />
           </label>
           <label>
             Password:
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
             />
           </label>
-          <button type="submit">Register</button>
+          <button type="submit">Login</button>
         </form>
-        {registrationStatus && <p>{registrationStatus}</p>}
-      </div>
-      <h2>User Authentication Microservice</h2>
-      {!isLoggedIn ? (
-        <button onClick={handleLogin}>Login</button>
-      ) : (
+        {loginStatus && <p>{loginStatus}</p>}
+        <h2>User Registration</h2>
         <div>
-          <p>Welcome, User!</p>
-          <button onClick={handleLogout}>Logout</button>
-          </div>
+          <form onSubmit={handleRegistration}>
+            <table>
+              <tbody>
+                <tr>
+                  <td><label>Username:</label></td>
+                  <td>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Email:</label></td>
+                  <td>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Password:</label></td>
+                  <td>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <button type="submit">Register</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+          {registrationStatus && <p>{registrationStatus}</p>}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <h1>Vital Signs Microservice</h1>
+      <h2>Create Vitals Information</h2>
+      <form onSubmit={handleCreateVitals}>
+        <table>
+          <tbody>
+            <tr>
+              <td><label>Heart Rate:</label></td>
+              <td><input
+                    type="number"
+                    value={heartrate}
+                    onChange={(e) => setHeartRate(e.target.value)}
+                  />
+              </td>
+            </tr>
+            <tr>
+              <td><label>Core Temperature:</label></td>
+              <td><input
+                    type="text"
+                    value={coretemp}
+                    onChange={(e) => setCoreTemp(e.target.value)}
+                  />
+              </td>
+            </tr>
+            <tr>
+              <td><label>Blood Pressure:</label></td>
+              <td><input
+                    type="text"
+                    value={bloodPressure}
+                    onChange={(e) => setBloodPressure(e.target.value)}
+                  />
+              </td>
+            </tr>
+            <tr>
+              <td><label>Respiratory Rate:</label></td>
+              <td><input
+                    type="text"
+                    value={respiratoryRate}
+                    onChange={(e) => setRespiratoryRate(e.target.value)}
+                  />
+              </td>
+            </tr>
+            <tr>
+              <td><button type="submit">Submit</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+      <h2>List Vital Signs</h2>
+      {vitals ? (
+        <ul>
+          {vitals.map((vital) => (
+            <li key={vital._id}>
+              {editVitalId  === vital._id ? (
+                <>
+                  <input
+                    type="number"
+                    value={editHeartrate}
+                    onChange={e => setEditHeartrate(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    value={editCoretemp}
+                    onChange={e => setEditCoretemp(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    value={editBloodPressure}
+                    onChange={e => setEditBloodPressure(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    value={editRespiratoryRate}
+                    onChange={e => setEditRespiratoryRate(e.target.value)}
+                  />
+                  <button onClick={() => handleSaveVital(vital._id)}>Save</button>
+                  <button onClick={handleCancelEdit}>Cancel</button>
+                </>
+              ) : (
+                <>
+                Heart Rate: {vital.heartrate}, &nbsp;
+                Core Temperature: {vital.coretemp},&nbsp;
+                Blood Pressure: {vital.bloodpressure},&nbsp;
+                Respiratory Rate: {vital.respiratoryrate}&nbsp;&nbsp;&nbsp;
+                <button onClick={() => handleEditVitals(vital._id)}>Edit</button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>Loading vitals...</p>
       )}
+      <div>
+          <p>Welcome, {loginEmail}!</p>
+          <button onClick={handleLogout}>Logout</button>
+      </div>
       {loginStatus && <p>{loginStatus}</p>}
     </div>
   );
