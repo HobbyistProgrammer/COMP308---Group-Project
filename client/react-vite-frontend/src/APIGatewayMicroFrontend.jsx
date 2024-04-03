@@ -8,8 +8,12 @@ function APIGatewayMicroFrontend() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isnurse, setIsNurse] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // Checks to see if the user logged in is a nurse
+  const [loginNurse, setLoginNurse] = useState(false);
 
   const [registrationStatus, setRegistrationStatus] = useState('');
 
@@ -24,6 +28,8 @@ function APIGatewayMicroFrontend() {
   const [editCoretemp, setEditCoretemp] = useState('');
   const [editBloodPressure, setEditBloodPressure] = useState('');
   const [editRespiratoryRate, setEditRespiratoryRate] = useState('');
+
+  const [motivationalTip, setMotivationalTip] = useState('');
 
   // Used to manipulate the loginstatus (Display login or others)
   const [loginStatus, setLoginStatus] = useState('');
@@ -50,6 +56,10 @@ function APIGatewayMicroFrontend() {
 
       const decodedToken = jwtDecode(token);
       const currentTime = Date.now() / 1000;
+
+      const timeUntilExpiry = decodedToken.exp - currentTime;
+      console.log('token will expiry in: ', timeUntilExpiry / 60, " minutes");
+
       if(decodedToken.exp > currentTime){
         setIsLoggedIn(true);
       } else {
@@ -61,6 +71,7 @@ function APIGatewayMicroFrontend() {
 
   async function handleLogout() {
     try{
+      setLoginNurse(false);
       const response = await fetch('http://localhost:3003/auth/logoff', {
         method: 'POST',
       });
@@ -81,7 +92,7 @@ function APIGatewayMicroFrontend() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, isnurse }),
       });
       //console.log(response);
       const data = await response.json();
@@ -109,14 +120,17 @@ function APIGatewayMicroFrontend() {
         },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
-      //console.log("checking response", response);
+
       if(response.ok){
-        //console.log("checking post: ", response);
-        const token = await response.text();
-        //console.log("checking after login: ", token);
-        //localStorage.setItem('authToken', token);
+
+        const {token, user} = await response.json();
         setToken(token);
+
+        // Set the email locally to be displayed on vitals page.
         localStorage.setItem('email', loginEmail);
+        //console.log('This is passed login user:', user);
+        setLoginNurse(user.isnurse);
+
         setLoginStatus('Login successful');
         setIsLoggedIn(true);
       } else {
@@ -196,6 +210,27 @@ function APIGatewayMicroFrontend() {
     }
   }
 
+  async function handleAddMotivationalTips() {
+    
+    try{
+      console.log(motivationalTip);
+      const response = await fetch('http://localhost:3004/tips/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ motivationalTip }),
+      });
+
+      //console.log('Tips: ', response);
+      const data = await response.json();
+
+      console.log('Tips data: ', data);
+    } catch (error) {
+      console.error('Error adding tips: ', error);
+    }
+  }
+
   function handleCancelEdit() {
     setEditVitalId(null);
     setEditHeartrate('');
@@ -265,6 +300,16 @@ function APIGatewayMicroFrontend() {
                   </td>
                 </tr>
                 <tr>
+                  <td><label>Are You a Nurse?:&nbsp;&nbsp;</label></td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      value={isnurse}
+                      onChange={(e) => setIsNurse(e.target.checked)}
+                    />
+                  </td>
+                </tr>
+                <tr>
                   <td>
                     <button type="submit">Register</button>
                   </td>
@@ -277,105 +322,141 @@ function APIGatewayMicroFrontend() {
       </div>
     );
   }
+
   return (
     <div>
-      <h1>Vital Signs Microservice</h1>
-      <h2>Create Vitals Information</h2>
-      <form onSubmit={handleCreateVitals}>
-        <table>
-          <tbody>
-            <tr>
-              <td><label>Heart Rate:</label></td>
-              <td><input
-                    type="number"
-                    value={heartrate}
-                    onChange={(e) => setHeartRate(e.target.value)}
-                  />
-              </td>
-            </tr>
-            <tr>
-              <td><label>Core Temperature:</label></td>
-              <td><input
-                    type="text"
-                    value={coretemp}
-                    onChange={(e) => setCoreTemp(e.target.value)}
-                  />
-              </td>
-            </tr>
-            <tr>
-              <td><label>Blood Pressure:</label></td>
-              <td><input
-                    type="text"
-                    value={bloodPressure}
-                    onChange={(e) => setBloodPressure(e.target.value)}
-                  />
-              </td>
-            </tr>
-            <tr>
-              <td><label>Respiratory Rate:</label></td>
-              <td><input
-                    type="text"
-                    value={respiratoryRate}
-                    onChange={(e) => setRespiratoryRate(e.target.value)}
-                  />
-              </td>
-            </tr>
-            <tr>
-              <td><button type="submit">Submit</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
-      <h2>List Vital Signs</h2>
-      {vitals ? (
-        <ul>
-          {vitals.map((vital) => (
-            <li key={vital._id}>
-              {editVitalId  === vital._id ? (
-                <>
-                  <input
-                    type="number"
-                    value={editHeartrate}
-                    onChange={e => setEditHeartrate(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    value={editCoretemp}
-                    onChange={e => setEditCoretemp(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    value={editBloodPressure}
-                    onChange={e => setEditBloodPressure(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    value={editRespiratoryRate}
-                    onChange={e => setEditRespiratoryRate(e.target.value)}
-                  />
-                  <button onClick={() => handleSaveVital(vital._id)}>Save</button>
-                  <button onClick={handleCancelEdit}>Cancel</button>
-                </>
-              ) : (
-                <>
-                Heart Rate: {vital.heartrate}, &nbsp;
-                Core Temperature: {vital.coretemp},&nbsp;
-                Blood Pressure: {vital.bloodpressure},&nbsp;
-                Respiratory Rate: {vital.respiratoryrate}&nbsp;&nbsp;&nbsp;
-                <button onClick={() => handleEditVitals(vital._id)}>Edit</button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>Loading vitals...</p>
-      )}
-      <div>
+      {loginNurse ? (
+        <>
+          <h1>Nurse - Viewing Patient Vital Signs</h1>
+          <div>
           <p>Welcome, {loginEmail}!</p>
           <button onClick={handleLogout}>Logout</button>
-      </div>
-      {loginStatus && <p>{loginStatus}</p>}
+          </div>
+          <h2>Create Patient Vitals Information</h2>
+          <form onSubmit={handleCreateVitals}>
+            <table>
+              <tbody>
+                <tr>
+                  <td><label>Heart Rate:</label></td>
+                  <td><input
+                        type="number"
+                        value={heartrate}
+                        onChange={(e) => setHeartRate(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Core Temperature:</label></td>
+                  <td><input
+                        type="text"
+                        value={coretemp}
+                        onChange={(e) => setCoreTemp(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Blood Pressure:</label></td>
+                  <td><input
+                        type="text"
+                        value={bloodPressure}
+                        onChange={(e) => setBloodPressure(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Respiratory Rate:</label></td>
+                  <td><input
+                        type="text"
+                        value={respiratoryRate}
+                        onChange={(e) => setRespiratoryRate(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><button type="submit">Submit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+          <h2>List of Previous Documented Vital Signs</h2>
+          {vitals ? (
+            <ul>
+              {vitals.map((vital) => (
+                <li key={vital._id}>
+                  {editVitalId  === vital._id ? (
+                    <>
+                      <input
+                        type="number"
+                        value={editHeartrate}
+                        onChange={e => setEditHeartrate(e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        value={editCoretemp}
+                        onChange={e => setEditCoretemp(e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        value={editBloodPressure}
+                        onChange={e => setEditBloodPressure(e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        value={editRespiratoryRate}
+                        onChange={e => setEditRespiratoryRate(e.target.value)}
+                      />
+                      <button onClick={() => handleSaveVital(vital._id)}>Save</button>
+                      <button onClick={handleCancelEdit}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                    Heart Rate: {vital.heartrate}, &nbsp;
+                    Core Temperature: {vital.coretemp},&nbsp;
+                    Blood Pressure: {vital.bloodpressure},&nbsp;
+                    Respiratory Rate: {vital.respiratoryrate}&nbsp;&nbsp;&nbsp;
+                    <button onClick={() => handleEditVitals(vital._id)}>Edit</button>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Loading vitals...</p>
+          )}
+          <div>
+            <h2>Create Daily Motivational Tip</h2>
+            <form id="tipform" onSubmit={handleAddMotivationalTips}>
+              <table>
+                <tr>
+                  <td>Enter motivational tip: </td>
+                  <td>
+                    <textarea
+                      form="tipform"
+                      cols="30"
+                      wrap="soft"
+                      value={motivationalTip}
+                      onChange={e => setMotivationalTip(e.target.value)}
+                    ></textarea>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <button type="submit">Submit</button>
+                  </td>
+                </tr>
+              </table>
+            </form>
+          </div>
+        </>
+      ) : (
+        <>
+          <h1>Patient - Viewing Patient Vital Signs</h1>
+          <div>
+          <p>Welcome, {loginEmail}!</p>
+          <button onClick={handleLogout}>Logout</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

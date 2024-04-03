@@ -26,7 +26,8 @@ db.once('open', function() {
 const userSchema = new mongoose.Schema({
   username: String,
   email: String,
-  password: String
+  password: String,
+  isnurse: Boolean,
 });
 
 const UserModel = mongoose.model('User', userSchema);
@@ -34,25 +35,26 @@ const UserModel = mongoose.model('User', userSchema);
 // GraphQL Schemas
 const schema = buildSchema(`
   type User {
-    id: ID
-    username: String
-    email: String
+    id: ID,
+    username: String,
+    email: String,
+    isnurse: Boolean
   }
 
   type Mutation {
-    signup(username: String!, email: String!, password: String!): User
+    signup(username: String!, email: String!, password: String!, isnurse: Boolean!): User
     login(email: String!, password: String!): User
     logout: String
   }
 `);
 
 const root = {
-  signup: async ({ username, email, password }) => {
+  signup: async ({ username, email, password, isnurse }) => {
     try{
       //console.log("Hashing password");
       const hashedPassword = await bcrypt.hash(password, 10);
-      //console.log("creating user", username, email, password);
-      const user = new UserModel({ username, email, password: hashedPassword });
+      console.log("creating user", username, email, password, isnurse);
+      const user = new UserModel({ username, email, password: hashedPassword, isnurse });
       await user.save();
       return user;
     } catch (error) {
@@ -79,7 +81,7 @@ const root = {
     const token = jwt.sign({ userId: user._id }, 'mySecret', { expiresIn: '1h' });
     // console.log("Token generated:", token);
   
-    return token;
+    return { token, user };
   },
 }
 
@@ -100,11 +102,12 @@ app.use(express.json());
 app.post('/auth/login', async (req, res) => {
   try{
     //console.log("trying sign in");
-    const {email, password} = req.body;
-    console.log("grabbing params: ", email, password);
-    const token = await root.login({ email, password });
-    console.log("logging: ", token);
-    res.json({token});
+    const { email, password } = req.body;
+    //console.log("grabbing params: ", email, password);
+    const { token, user } = await root.login({ email, password });
+    console.log("logging: ", user);
+
+    res.json({ token, user });
   } catch (error) {
     res.status(401).send(error.message);
   }
@@ -112,9 +115,9 @@ app.post('/auth/login', async (req, res) => {
 
 app.post('/auth/signup', async (req, res) => {
   try{
-    const { username, email, password } = req.body;
+    const { username, email, password, isnurse } = req.body;
     console.log(req.body);
-    const user = await root.signup({ username, email, password });
+    const user = await root.signup({ username, email, password, isnurse });
     console.log("registering user: ", user);
     res.json(user);
 
