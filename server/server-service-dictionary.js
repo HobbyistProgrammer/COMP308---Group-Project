@@ -64,6 +64,26 @@ const serviceDictionary = {
         },
       ],
     },
+    {
+      name: 'Motivational Tip Microservice',
+      endpoints: [
+        {
+          name: 'GetTips',
+          url: 'http://localhost:3004/tips',
+          method: 'GET'
+        },
+      ],
+    },
+    {
+      name: 'Add Motivational Tip Microservice',
+      endpoints: [
+        {
+          name: 'AddTips',
+          url: 'http://localhost:3004/tips/add',
+          method: 'POST'
+        },
+      ],
+    },
   ],
 };
 

@@ -19,6 +19,8 @@ const serviceEndpoints = {
   'User Authentication Microservice': 'http://localhost:3003',
   'User Registration Microservice' : 'http://localhost:3003',
   'User Logoff Microservice': 'http://localhost:3003',
+  'Motivational Tip Microservice': 'http://localhost:3004',
+  'Add Motivational Tip Microservice': 'http://localhost:3004',
 };
 //
 app.get('/vitals', async (req, res) => {
@@ -50,7 +52,26 @@ app.put('/vitals/:id', async (req, res) => {
   }
 });
 
-//
+app.get('/tips', async (req, res) => {
+  try{
+    const response = await axios.get(`${serviceEndpoints['Motivational Tip Microservice']}/tips`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error fetching tips: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/tips/add', async (req, res) => {
+  try{
+    const response = await axios.put(`${serviceEndpoints['Add Motivational Tip Microservice']}/tips/add`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error adding tips: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 app.post('/auth/login', async (req, res) => {
   try {
     const response = await axios.post(`${serviceEndpoints['User Authentication Microservice']}/auth/login`);
