@@ -25,7 +25,9 @@ const serviceEndpoints = {
   'Patient Vitals Microservice': 'http://localhost:3005',
   'Add Patient Vitals Microservice': 'http://localhost:3005',
   'Emergency Microservice': 'http://localhost:3005',
-  'Add Emergency Microservice': 'http://localhost:3005'
+  'Add Emergency Microservice': 'http://localhost:3005',
+  'Symptom Checker Microservice': 'http://localhost:3007'
+
 };
 
 app.get('/vitals', async (req, res) => {
@@ -153,6 +155,19 @@ app.post('/auth/logout', async (req, res) => {
     res.status.send('Internal Server Error');
   }
 });
+
+//symptom checker
+
+app.post('/check-symptoms', async (req, res) => {
+  try {
+    const response = await axios.post(`${serviceEndpoints['Symptom Checker Microservice']}/check-symptoms`, req.body);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error checking symptoms:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`API Gateway listening on port ${port}`);

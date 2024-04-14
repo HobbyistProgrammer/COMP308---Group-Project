@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import {jwtDecode} from 'jwt-decode';
 import { gql, useQuery } from '@apollo/client';
 import { getToken, setToken, removeToken } from './TokenHelper';
+import axios from 'axios';
+
 
 function APIGatewayMicroFrontend() {
 
@@ -47,6 +49,17 @@ function APIGatewayMicroFrontend() {
   // Used to manipulate the loginstatus (Display login or others)
   const [loginStatus, setLoginStatus] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+
+  // // New states for symptoms and conditions
+  // const [symptoms, setSymptoms] = useState('');
+  // const [conditions, setConditions] = useState([]);
+  const [symptoms, setSymptoms] = useState('');
+  const [conditions, setConditions] = useState([]);
+  const [symptomDescription, setSymptomDescription] = useState('');
+  const [potentialCauses, setPotentialCauses] = useState([]);
+  const [followupQuestions, setFollowupQuestions] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function fetchVitals() {
@@ -363,6 +376,21 @@ function APIGatewayMicroFrontend() {
   function handleFitnessGame() {
     window.location.href = 'http://localhost:3000'
   }
+
+
+    const handleCheckSymptoms = async () => {
+      setError(''); // Clear previous errors
+      try {
+        const response = await axios.post('http://localhost:3007/check-symptoms', { symptoms });
+        setPotentialCauses(response.data.potentialCauses);
+        setFollowupQuestions(response.data.followupQuestions);
+        setSymptomDescription(response.data.symptoms);
+      } catch (error) {
+        setError('An error occurred while checking symptoms. Please try again.');
+        console.error('Error checking symptoms:', error);
+      }
+    };
+    
 
   function handleCancelEdit() {
     setEditVitalId(null);
@@ -727,6 +755,47 @@ function APIGatewayMicroFrontend() {
           </form>
         </>
       )}
+
+<div>
+  <h2>Symptom Checker</h2>
+  {/* Textarea for inputting symptoms */}
+  <textarea
+    value={symptoms}
+    onChange={(e) => setSymptoms(e.target.value)}
+    placeholder="Enter symptoms..."
+  />
+  {/* Button to trigger symptom check */}
+  <button onClick={handleCheckSymptoms}>Check Symptoms</button>
+
+  {/* Error message display */}
+  {error && <p className="error">{error}</p>}
+
+  {/* Display potential causes if they exist */}
+  {potentialCauses.length > 0 && (
+    <div>
+      <h3>Possible Causes</h3>
+      <ul>
+        {potentialCauses.map((cause, index) => (
+          <li key={index}>{cause}</li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  {/* Display follow-up questions if they exist */}
+  {followupQuestions.length > 0 && (
+    <div>
+      <h3>Follow-up Questions</h3>
+      <ul>
+        {followupQuestions.map((question, index) => (
+          <li key={index}>{question}</li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
+
+
     </div>
   );
 }

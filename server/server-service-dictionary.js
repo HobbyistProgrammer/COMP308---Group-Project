@@ -134,6 +134,17 @@ const serviceDictionary = {
         },
       ],
     },
+    {
+      name: 'Symptom Checker Microservice',
+      endpoints: [
+        {
+          name: 'CheckSymptoms',
+          url: 'http://localhost:3007/check-symptoms',
+          method: 'POST'
+        },
+      ],
+    }
+    
   ],
 };
 
