@@ -223,8 +223,8 @@ function APIGatewayMicroFrontend() {
     }
   }
 
-  async function handleAddMotivationalTips() {
-    
+  async function handleAddMotivationalTips(e) {
+    e.preventDefault();
     try{
       console.log(motivationalTip);
       const response = await fetch('http://localhost:3004/tips/add', {
@@ -239,6 +239,8 @@ function APIGatewayMicroFrontend() {
       const data = await response.json();
 
       console.log('Tips data: ', data);
+      const tempTextArea = Document.getElementById('motivationalarea');
+      tempTextArea.value = '';
     } catch (error) {
       console.error('Error adding tips: ', error);
     }
@@ -356,6 +358,10 @@ function APIGatewayMicroFrontend() {
     } catch (error) {
       console.error('Error fetching emergency:', error);
     }
+  }
+
+  function handleFitnessGame() {
+    window.location.href = 'http://localhost:3000'
   }
 
   function handleCancelEdit() {
@@ -558,6 +564,7 @@ function APIGatewayMicroFrontend() {
                   <td>Enter motivational tip: </td>
                   <td>
                     <textarea
+                      id="motivationalarea"
                       form="tipform"
                       cols="30"
                       wrap="soft"
@@ -582,6 +589,8 @@ function APIGatewayMicroFrontend() {
             <p>Welcome, {loginEmail}!</p>
             <button onClick={handleLogout}>Logout</button>
           </div>
+          <h2>Click to play a fitness game</h2>
+          <button onClick={handleFitnessGame}>Play Game</button>
           <h2>Generate Motivational Quote</h2>
           <table>
             <tr>
