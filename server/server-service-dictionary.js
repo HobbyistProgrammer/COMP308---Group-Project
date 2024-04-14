@@ -84,6 +84,56 @@ const serviceDictionary = {
         },
       ],
     },
+    {
+      name: 'Delete Motivational Tip Microservice',
+      endpoints: [
+        {
+          name: 'DeleteTips',
+          url: 'http://localhost:3004/tips/delete/:id',
+          method: 'DELETE'
+        },
+      ],
+    },
+    {
+      name: 'Patient Vitals Microservice',
+      endpoints: [
+        {
+          name: 'GetPatientVitals',
+          url: 'http://localhost:3005/patient',
+          method: 'GET'
+        },
+      ],
+    },
+    {
+      name: 'Add Patient Vitals Microservice',
+      endpoints: [
+        {
+          name: 'AddPatientVitals',
+          url: 'http://localhost:3005/patient/add',
+          method: 'POST'
+        },
+      ],
+    },
+    {
+      name: 'Emergency Microservice',
+      endpoints: [
+        {
+          name: 'GetEmergency',
+          url: 'http://localhost:3005/emergency',
+          method: 'GET'
+        },
+      ],
+    },
+    {
+      name: 'Add Emergency Microservice',
+      endpoints: [
+        {
+          name: 'AddEmergency',
+          url: 'http://localhost:3005/emergency/add',
+          method: 'POST'
+        },
+      ],
+    },
   ],
 };
 

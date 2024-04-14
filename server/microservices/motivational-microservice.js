@@ -38,6 +38,7 @@ const schema = buildSchema(`
 
   type Mutation {
     addTip(tips: String!): Tip
+    deleteMotivationalTip(id: ID!): Boolean
   }
 `);
 
@@ -61,6 +62,20 @@ const root = {
       throw new Error('Error creating tips');
     }
   },
+  // deleteMotivationalTip: async ({ id }) => {
+  //   try{
+  //     console.log("deleting tip: ", id);
+  //     const deletedTip = await TipModel.findByIdAndDelete(id);
+  //     if (deletedTip) {
+  //       return true;
+  //     } else {
+  //       return false;
+  //     }
+  //   }catch (error) {
+  //     console.error('Error deleting tip:', error);
+  //     return false;
+  //   }
+  // },
 }
 
 app.use(express.json());
@@ -83,6 +98,18 @@ app.post('/tips/add', async (req, res) => {
     const newTip = await root.addTip({ tips: motivationalTip });
     //console.log('new tips worked: ', newTip);
     res.json(newTip);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
+
+app.delete('/tips/delete/:id', async (req, res) => {
+  try{
+    const { id } = req.body;
+    //console.log(id);
+    const deleted = await TipModel.findByIdAndDelete(id);
+    //console.log('new tips worked: ', newTip);
+    res.json(deleted);
   } catch (error) {
     res.status(400).send(error.message);
   }

@@ -1,6 +1,7 @@
 // APIGatewayMicroFrontend.js
 import React, { useEffect, useState } from 'react';
 import {jwtDecode} from 'jwt-decode';
+import { gql, useQuery } from '@apollo/client';
 import { getToken, setToken, removeToken } from './TokenHelper';
 
 function APIGatewayMicroFrontend() {
@@ -30,6 +31,18 @@ function APIGatewayMicroFrontend() {
   const [editRespiratoryRate, setEditRespiratoryRate] = useState('');
 
   const [motivationalTip, setMotivationalTip] = useState('');
+
+  const [selectedSymptoms, setSelectedSymptoms] = useState('');
+
+  const [emergencyType, setEmergencyType] = useState('');
+  const [location, setLocation] = useState('');
+  const [description, setDescriptions] = useState('');
+
+  const [patientHeartRate, setPatientHeartRate] = useState('');
+  const [patientCoreTemp, setPatientCoreTemp] = useState('');
+  const [patientBloodPressure, setPatientBloodPressure] = useState('');
+  const [patientRespiratoryRate, setPatientRespiratoryRate] = useState('');
+  // const [patientSymptoms, setPatientSymptoms] = useState([]);
 
   // Used to manipulate the loginstatus (Display login or others)
   const [loginStatus, setLoginStatus] = useState('');
@@ -228,6 +241,120 @@ function APIGatewayMicroFrontend() {
       console.log('Tips data: ', data);
     } catch (error) {
       console.error('Error adding tips: ', error);
+    }
+  }
+  const handleCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+    if(checked){
+      setSelectedSymptoms([...selectedSymptoms, value]);
+    } else {
+      setSelectedSymptoms(selectedSymptoms.filter(item => item !== value));
+    }
+  }
+
+  async function handleAlertSubmit(){
+    try{
+      const response = await fetch('http://localhost:3005/emergency/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ emergencyType, location, description }),
+      });
+
+      //console.log('Tips: ', response);
+      const data = await response.json();
+
+      console.log('Emergency data: ', data);
+    } catch (error) {
+      console.error('Error adding Emergency: ', error);
+    }
+  }
+
+  async function checkAlertMessages(e){
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:3005/emergency');
+      if (!response.ok) {
+        throw new Error('Failed to fetch emergency data');
+      }
+      const data = await response.json();
+      console.log('emergency data:', data);
+    } catch (error) {
+      console.error('Error fetching emergency:', error);
+    }
+  }
+
+  // Server-side functionlity to delete motivational tips.
+  async function handleRandomMotivational() {
+
+    /* Code commented below is for removing tip by id */
+    // const id = "660cc7afb3ce8ecc4b970df0";
+    // try {
+    //   const response = await fetch(`http://localhost:3004/tips/delete/${id}`, {
+    //     method: 'DELETE',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       id: id,
+    //     }),
+    //   });
+  
+    //   if (!response.ok) {
+    //     throw new Error('Failed to delete tip');
+    //   }
+  
+    //   console.log('Tip deleted successfully');
+    // } catch (error) {
+    //   console.error('Error deleting tip:', error);
+    // }
+    try {
+      const response = await fetch('http://localhost:3004/tips');
+      if (!response.ok) {
+        throw new Error('Failed to fetch emergency data');
+      }
+      const data = await response.json();
+      const randomIndex = Math.floor(Math.random() * data.length);
+      const h2Element = document.getElementById('randomQuote');
+
+      //console.log(data);
+
+      h2Element.textContent = '* ' + data[randomIndex].tips + ' *';
+      console.log('tips data:', data); 
+    } catch (error) {
+      console.error('Error fetching emergency:', error);
+    }
+  }
+
+  async function handlePatientVitals() {
+    try{
+      //console.log("Creating vitals:", heartrate, coretemp, bloodPressure);
+      const response = await fetch('http://localhost:3005/patient/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ patientHeartRate, patientCoreTemp, patientBloodPressure, patientRespiratoryRate, selectedSymptoms}),
+      });
+      console.log("after fetch",response);
+      const data = await response.json();
+    } catch (error) {
+      console.error('Error adding patient: ', error);
+    }
+  }
+
+  async function displayPatients() {
+    try {
+      const response = await fetch('http://localhost:3005/patient');
+      if (!response.ok) {
+        throw new Error('Failed to fetch patient data');
+      }
+      const data = await response.json();
+
+      console.log('patient data list:', data); 
+    } catch (error) {
+      console.error('Error fetching emergency:', error);
     }
   }
 
@@ -452,13 +579,146 @@ function APIGatewayMicroFrontend() {
         <>
           <h1>Patient - Viewing Patient Vital Signs</h1>
           <div>
-          <p>Welcome, {loginEmail}!</p>
-          <button onClick={handleLogout}>Logout</button>
+            <p>Welcome, {loginEmail}!</p>
+            <button onClick={handleLogout}>Logout</button>
           </div>
+          <h2>Generate Motivational Quote</h2>
+          <table>
+            <tr>
+              <td><button onClick={handleRandomMotivational}>Display Motivational</button></td>
+              <td><h3 id="randomQuote"></h3></td>
+            </tr>
+          </table>
+         
+          
+          <h2>Send Emergency Alert to First Responders</h2>
+          <div>
+            <form onSubmit={handleAlertSubmit}>
+              <table>
+                <tr>
+                  <th>Emergency Type: </th>
+                  <td>
+                    <select required value={emergencyType} onChange={(e) => setEmergencyType(e.target.value)}>
+                      <option value="">Select a option</option>
+                      <option value="Fire">Fire</option>
+                      <option value="Medical">Medical</option>
+                      <option value="Severe Weather">Severe Weather</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Location: </th>
+                  <td><input required type="text" value={location} onChange={(e) => setLocation(e.target.value)}/></td>
+                </tr>
+                <tr>
+                  <th>Description: </th>
+                  <td><textarea required value={description} onChange={(e) => setDescriptions(e.target.value)}></textarea></td>
+                </tr>
+                <tr>
+                  <td><input type="submit" value="Send Alert" /></td>
+                  <td><button onClick={checkAlertMessages}>Check Alerts(For Testing)</button></td>
+                </tr>
+              </table>
+            </form>
+          </div>
+          <h2>Create Patient Vitals Information</h2>
+          <form onSubmit={handlePatientVitals}>
+            <table>
+              <tbody>
+                <tr>
+                  <td><label>Heart Rate:</label></td>
+                  <td><input
+                        type="number"
+                        required
+                        value={patientHeartRate}
+                        onChange={(e) => setPatientHeartRate(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Core Temperature:</label></td>
+                  <td><input
+                        type="text"
+                        required
+                        value={patientCoreTemp}
+                        onChange={(e) => setPatientCoreTemp(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Blood Pressure:</label></td>
+                  <td><input
+                        type="text"
+                        required
+                        value={patientBloodPressure}
+                        onChange={(e) => setPatientBloodPressure(e.target.value)}
+                      />
+                  </td>
+                </tr>
+                <tr>
+                  <td><label>Respiratory Rate:</label></td>
+                  <td><input
+                        type="text"
+                        required
+                        value={patientRespiratoryRate}
+                        onChange={(e) => setPatientRespiratoryRate(e.target.value)}
+                      />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <h3>Checklist of common signs and symptoms</h3>
+            <h4>Please check any that apply:</h4>
+            <table>
+              <tr>
+                <td>
+                  <label>
+                    <input type="checkbox" value="Fever" onChange={handleCheckboxChange} />
+                    Fever
+                  </label>
+                </td>
+                <td>
+                  <label>
+                    <input type="checkbox" value="Cough" onChange={handleCheckboxChange} />
+                    Cough
+                  </label>
+                </td>
+                <td>
+                  <label>
+                    <input type="checkbox" value="Sore Throat" onChange={handleCheckboxChange} />
+                    Sore Throat
+                  </label>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label>
+                    <input type="checkbox" value="Body Aches" onChange={handleCheckboxChange} />
+                    Body Aches
+                  </label>
+                </td>
+                <td>
+                  <label>
+                    <input type="checkbox" value="Irritable Bowels" onChange={handleCheckboxChange} />
+                    Irritable Bowels
+                  </label>
+                </td>
+                <td>
+                  <label>
+                    <input type="checkbox" value="Headache" onChange={handleCheckboxChange} />
+                    Headache
+                  </label>
+                </td>
+              </tr>
+              <tr>
+                <td><button type="submit">Submit</button></td>
+                <td><button onClick={displayPatients}>Display Patients</button></td>
+              </tr>
+            </table>
+          </form>
         </>
       )}
     </div>
   );
 }
-
 export default APIGatewayMicroFrontend;

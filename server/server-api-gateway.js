@@ -21,8 +21,13 @@ const serviceEndpoints = {
   'User Logoff Microservice': 'http://localhost:3003',
   'Motivational Tip Microservice': 'http://localhost:3004',
   'Add Motivational Tip Microservice': 'http://localhost:3004',
+  'Delete Motivational Tip Microservice': 'http://localhost:3004',
+  'Patient Vitals Microservice': 'http://localhost:3005',
+  'Add Patient Vitals Microservice': 'http://localhost:3005',
+  'Emergency Microservice': 'http://localhost:3005',
+  'Add Emergency Microservice': 'http://localhost:3005'
 };
-//
+
 app.get('/vitals', async (req, res) => {
   try {
     const response = await axios.get(`${serviceEndpoints['Vitals Microservice']}/vitals`);
@@ -68,6 +73,53 @@ app.post('/tips/add', async (req, res) => {
     res.send(response.data);
   } catch (error) {
     console.error('Error adding tips: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+app.delete('/tips/delete', async (req, res) => {
+  try{
+    const response = await axios.delete(`${serviceEndpoints['Delete Motivational Tip Microservice']}/tips/delete/:id`)
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error adding tips: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/patient', async (req, res) => {
+  try {
+    const response = await axios.get(`${serviceEndpoints['Patient Vitals Microservice']}/patient`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error fetching patient:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+app.post('/patient/add', async (req, res) => {
+  try {
+    const response = await axios.post(`${serviceEndpoints['Add Patient Vitals Microservice']}/patient/add`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error adding patient: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/emergency', async (req, res) => {
+  try {
+    const response = await axios.get(`${serviceEndpoints['Emergency Microservice']}/emergency`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error fetching emergency:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+app.post('/emergency/add', async (req, res) => {
+  try {
+    const response = await axios.post(`${serviceEndpoints['Add Emergency Microservice']}/emergency/add`);
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error adding emergency: ', error);
     res.status(500).send('Internal Server Error');
   }
 });
